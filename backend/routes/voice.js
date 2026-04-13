@@ -16,7 +16,20 @@ The practice has four specialists:
 - Dr. Michael Torres — Neurologist (brain, nerves, headaches)
 
 Office: 123 Medical Plaza, Suite 400, New York, NY 10001
-Hours: Monday through Friday 8am to 6pm, Saturday 9am to 1pm`;
+Hours: Monday through Friday 8am to 6pm, Saturday 9am to 1pm
+
+When the patient wants to check availability, use the get_availability function with the body_part parameter.
+
+When the patient confirms an appointment, use the book_appointment function with these parameters:
+- slot_id (number)
+- first_name (string)
+- last_name (string)
+- dob (string, format YYYY-MM-DD)
+- phone (string)
+- email (string)
+- reason (string)
+
+Always collect the patient's email before booking so they receive a confirmation email.`;
 
 function formatHistoryForVoice(messages) {
   return messages
@@ -99,6 +112,7 @@ router.post("/initiate", async (req, res) => {
         toNumber: phoneNumber,
         browserCall: false,
         timeoutMinutes: 10,
+        webhookUrl: `${process.env.BASE_URL}/api/voice/webhook`
       }),
     });
 
@@ -126,6 +140,58 @@ router.post("/initiate", async (req, res) => {
     console.error("Voice initiate error:", err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+router.post('/webhook', async (req, res) => {
+  console.log('Vogent webhook received:', JSON.stringify(req.body, null, 2));
+
+  const { type, data } = req.body;
+
+  if (type === 'function_call' || type === 'tool_call') {
+    const toolName = data?.name || data?.function?.name;
+    const toolInput = data?.input || data?.arguments;
+
+    if (toolName === 'get_availability') {
+      try {
+        const slots = await getAvailability(toolInput.body_part);
+        const formatted = slots.length > 0
+          ? slots.map(s => `${s.provider_name} on ${new Date(s.slot_time).toLocaleString('en-US', {
+              weekday: 'long', month: 'long', day: 'numeric',
+              hour: 'numeric', minute: '2-digit', hour12: true
+            })}, slot ID ${s.id}`).join('. ')
+          : 'No available slots for that specialty.';
+
+        return res.json({ result: formatted });
+      } catch (err) {
+        console.error('get_availability error:', err);
+        return res.json({ result: 'Unable to fetch availability right now.' });
+      }
+    }
+
+    if (toolName === 'book_appointment') {
+      try {
+        const result = await bookAppointment({
+          slotId: toolInput.slot_id,
+          firstName: toolInput.first_name,
+          lastName: toolInput.last_name,
+          dob: toolInput.dob,
+          phone: toolInput.phone,
+          email: toolInput.email,
+          smsOptIn: toolInput.sms_opt_in || false,
+          reason: toolInput.reason
+        });
+
+        return res.json({
+          result: `Appointment confirmed for ${result.patient.first_name} ${result.patient.last_name} with ${result.appointment.provider_name}. A confirmation email has been sent to ${result.patient.email}.`
+        });
+      } catch (err) {
+        console.error('book_appointment error:', err);
+        return res.json({ result: 'Sorry, there was an issue booking the appointment. Please try again.' });
+      }
+    }
+  }
+
+  res.json({ success: true });
 });
 
 module.exports = router;

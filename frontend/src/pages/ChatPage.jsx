@@ -92,12 +92,17 @@ export default function ChatPage() {
 
   const initiateCall = async () => {
     if (!callPhone.trim()) return;
+
+    let phone = callPhone.trim(); // strip non-digits
+    if (phone.length === 10) phone = "1" + phone; // add country code
+    phone = "+" + phone;
+    console.log(phone);
     setCallLoading(true);
 
     try {
       await axios.post(`${API_URL}/api/voice/initiate`, {
         sessionId,
-        phoneNumber: callPhone,
+        phoneNumber: phone,
       });
       setCallDialogOpen(false);
       setCallPhone("");
@@ -106,7 +111,7 @@ export default function ChatPage() {
         ...prev,
         {
           role: "assistant",
-          text: `Calling you now at ${callPhone}! The AI will continue our conversation seamlessly over the phone.`,
+          text: `Calling you now at ${phone}! The AI will continue our conversation seamlessly over the phone.`,
         },
       ]);
     } catch (err) {
@@ -263,16 +268,33 @@ export default function ChatPage() {
             Enter your phone number and we'll call you right away. The AI will
             pick up exactly where your chat left off.
           </Typography>
-          <TextField
-            fullWidth
-            label="Phone number"
-            placeholder="+1 (555) 000-0000"
-            value={callPhone}
-            onChange={(e) => setCallPhone(e.target.value)}
-            size="small"
-            onKeyDown={(e) => e.key === "Enter" && initiateCall()}
-            autoFocus
-          />
+          <Box sx={{
+            display: "flex",
+            flexDirection: "row",
+            gap: 1,
+          }}>
+            <TextField
+            sx={{
+                width: "13%"
+            }}
+              fullWidth
+              label="+1"
+              placeholder="+1"
+              disabled={true}
+              value={callPhone}
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label="Phone number"
+              placeholder="+1 (555) 000-0000"
+              value={callPhone}
+              onChange={(e) => setCallPhone(e.target.value)}
+              size="small"
+              onKeyDown={(e) => e.key === "Enter" && initiateCall()}
+              autoFocus
+            />
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setCallDialogOpen(false)} color="inherit">
