@@ -68,12 +68,11 @@ export default function AdminPage() {
   const addSlot = async () => {
     setAddingSlot(true);
     try {
-      const slotTime = selectedDate
-        .hour(newSlotTime.hour())
-        .minute(newSlotTime.minute())
-        .second(0)
-        .utc()
-        .toISOString();
+      const slotTime = dayjs.utc(selectedDate.format('YYYY-MM-DD'))
+      .hour(newSlotTime.hour())
+      .minute(newSlotTime.minute())
+      .second(0)
+      .toISOString();
 
       await axios.post(`${API_URL}/api/availability`, {
         provider_id: selectedProvider.id,

@@ -62,4 +62,32 @@ router.patch('/:slotId', async (req, res) => {
   }
 });
 
+// Cancel a booked appointment (set back to available)
+router.patch('/:slotId/cancel', async (req, res) => {
+  const { slotId } = req.params;
+  try {
+    await sequelize.query(
+      `UPDATE availability_slots SET is_booked = false WHERE id = :slotId`,
+      { replacements: { slotId } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a slot entirely
+router.delete('/:slotId', async (req, res) => {
+  const { slotId } = req.params;
+  try {
+    await sequelize.query(
+      `DELETE FROM availability_slots WHERE id = :slotId`,
+      { replacements: { slotId } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
