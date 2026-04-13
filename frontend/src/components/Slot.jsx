@@ -1,5 +1,7 @@
-import { Box, Button, Typography } from "@mui/material";
-export default function Slot({ slot, onBook }) {
+import { Box, Button, Typography, IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+export default function Slot({ slot, onBook, onCancel, onDelete }) {
   return (
     <Box sx={{
       display: "flex",
@@ -10,21 +12,31 @@ export default function Slot({ slot, onBook }) {
       borderColor: slot.is_booked ? "error.main" : "primary.main",
       borderWidth: "1px",
       borderStyle: "solid",
-      borderRadius: 1,
-      opacity: slot.is_booked ? 0.6 : 1
+      borderRadius: 2,
+      opacity: slot.is_booked ? 0.7 : 1
     }}>
       <Typography>
         {new Date(slot.slot_time).toLocaleTimeString('en-US', {
           hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC'
         })}
       </Typography>
-      {slot.is_booked ? (
-        <Typography variant="caption" color="error">Booked</Typography>
-      ) : (
-        <Button size="small" variant="outlined" onClick={onBook}>
-          Book
-        </Button>
-      )}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        {slot.is_booked ? (
+          <>
+            <Typography variant="caption" color="error" sx={{ mr: 1 }}>Booked</Typography>
+            <Button size="small" variant="outlined" color="warning" onClick={onCancel}>
+              Cancel Appt
+            </Button>
+          </>
+        ) : (
+          <Button size="small" variant="outlined" onClick={onBook}>
+            Book
+          </Button>
+        )}
+        <IconButton size="small" color="error" onClick={onDelete}>
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Box>
     </Box>
   )
 }

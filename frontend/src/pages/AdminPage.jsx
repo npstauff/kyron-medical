@@ -1,4 +1,17 @@
-import { Box, Button, IconButton, Paper, Typography, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Switch, FormControlLabel } from "@mui/material";
+import {
+  Box,
+  Button,
+  IconButton,
+  Paper,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Switch,
+  FormControlLabel,
+} from "@mui/material";
 import AppTopBar from "../components/AppTopBar";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -35,8 +48,13 @@ export default function AdminPage() {
   const [bookOpen, setBookOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState(null);
   const [bookForm, setBookForm] = useState({
-    first_name: '', last_name: '', dob: '',
-    phone: '', email: '', reason: '', sms_opt_in: false
+    first_name: "",
+    last_name: "",
+    dob: "",
+    phone: "",
+    email: "",
+    reason: "",
+    sms_opt_in: false,
   });
   const [booking, setBooking] = useState(false);
 
@@ -65,18 +83,39 @@ export default function AdminPage() {
     }
   };
 
+  const cancelAppointment = async (slotId) => {
+    try {
+      await axios.patch(`${API_URL}/api/availability/${slotId}/cancel`);
+      setSlots((prev) =>
+        prev.map((s) => (s.id === slotId ? { ...s, is_booked: false } : s))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteSlot = async (slotId) => {
+    try {
+      await axios.delete(`${API_URL}/api/availability/${slotId}`);
+      setSlots((prev) => prev.filter((s) => s.id !== slotId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const addSlot = async () => {
     setAddingSlot(true);
     try {
-      const slotTime = dayjs.utc(selectedDate.format('YYYY-MM-DD'))
-      .hour(newSlotTime.hour())
-      .minute(newSlotTime.minute())
-      .second(0)
-      .toISOString();
+      const slotTime = dayjs
+        .utc(selectedDate.format("YYYY-MM-DD"))
+        .hour(newSlotTime.hour())
+        .minute(newSlotTime.minute())
+        .second(0)
+        .toISOString();
 
       await axios.post(`${API_URL}/api/availability`, {
         provider_id: selectedProvider.id,
-        slot_time: slotTime
+        slot_time: slotTime,
       });
 
       await fetchSlots();
@@ -93,11 +132,19 @@ export default function AdminPage() {
     try {
       await axios.post(`${API_URL}/api/chat`, {
         sessionId: `admin-${Date.now()}`,
-        message: `Book appointment for slot ${bookingSlot.id} for patient ${bookForm.first_name} ${bookForm.last_name}, DOB ${bookForm.dob}, phone ${bookForm.phone}, email ${bookForm.email}, reason: ${bookForm.reason}`
+        message: `Book appointment for slot ${bookingSlot.id} for patient ${bookForm.first_name} ${bookForm.last_name}, DOB ${bookForm.dob}, phone ${bookForm.phone}, email ${bookForm.email}, reason: ${bookForm.reason}`,
       });
       await fetchSlots();
       setBookOpen(false);
-      setBookForm({ first_name: '', last_name: '', dob: '', phone: '', email: '', reason: '', sms_opt_in: false });
+      setBookForm({
+        first_name: "",
+        last_name: "",
+        dob: "",
+        phone: "",
+        email: "",
+        reason: "",
+        sms_opt_in: false,
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -106,55 +153,115 @@ export default function AdminPage() {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", width: "100%", height: "100vh" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100vh",
+      }}
+    >
       <AppTopBar
         setCallDialogOpen={() => {}}
         switchPage={() => navigate("/")}
         isAdmin={true}
       />
-      <Box sx={{ display: "flex", flexDirection: "row", width: "100%", height: "100%", gap: 1, padding: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          width: "100%",
+          height: "100%",
+          gap: 1,
+          padding: 2,
+        }}
+      >
         {!loading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", width: "40%", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              width: "40%",
+              gap: 2,
+            }}
+          >
             {providers.map((p) => (
-              <ProviderCard key={p.id} provider={p} onSelect={() => setSelectedProvider(p)} />
+              <ProviderCard
+                key={p.id}
+                provider={p}
+                onSelect={() => setSelectedProvider(p)}
+              />
             ))}
           </Box>
         ) : (
           <Typography>Loading...</Typography>
         )}
 
-        <Paper sx={{ width: "60%", height: "100%", padding: 2, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        <Paper
+          sx={{
+            width: "60%",
+            height: "100%",
+            padding: 2,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "auto",
+          }}
+        >
           {selectedProvider !== null ? (
-            <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "auto" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                overflow: "auto",
+              }}
+            >
               <Typography variant="h6">{selectedProvider.name}</Typography>
-              <Typography variant="body2" color="text.secondary">{selectedProvider.specialty}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedProvider.specialty}
+              </Typography>
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar value={selectedDate} onChange={setSelectedDate} />
               </LocalizationProvider>
 
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mb: 1,
+                }}
+              >
                 <Typography variant="h6">
                   Slots for {selectedDate.format("MMMM D, YYYY")}
                 </Typography>
-                <IconButton color="primary" onClick={() => setAddSlotOpen(true)}>
+                <IconButton
+                  color="primary"
+                  onClick={() => setAddSlotOpen(true)}
+                >
                   <AddIcon />
                 </IconButton>
               </Box>
 
               {slots
-                .filter(s =>
-                  s.provider_id === selectedProvider.id &&
-                  dayjs(s.slot_time).utc().isSame(selectedDate, "day")
+                .filter(
+                  (s) =>
+                    s.provider_id === selectedProvider.id &&
+                    dayjs(s.slot_time).utc().isSame(selectedDate, "day")
                 )
-                .map(s => (
+                .map((s) => (
                   <Slot
                     key={s.id}
                     slot={s}
-                    onBook={() => { setBookingSlot(s); setBookOpen(true); }}
+                    onBook={() => {
+                      setBookingSlot(s);
+                      setBookOpen(true);
+                    }}
+                    onCancel={() => cancelAppointment(s.id)}
+                    onDelete={() => deleteSlot(s.id)}
                   />
-                ))
-              }
+                ))}
             </Box>
           ) : (
             <Typography variant="h6">No Provider Selected</Typography>
@@ -163,77 +270,123 @@ export default function AdminPage() {
       </Box>
 
       {/* Add Slot Dialog */}
-      <Dialog open={addSlotOpen} onClose={() => setAddSlotOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={addSlotOpen}
+        onClose={() => setAddSlotOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle fontWeight={600}>Add New Slot</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Adding slot for {selectedProvider?.name} on {selectedDate?.format("MMMM D, YYYY")}
+            Adding slot for {selectedProvider?.name} on{" "}
+            {selectedDate?.format("MMMM D, YYYY")}
           </Typography>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <TimePicker
               label="Time"
               value={newSlotTime}
               onChange={setNewSlotTime}
-              slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+              slotProps={{ textField: { fullWidth: true, size: "small" } }}
             />
           </LocalizationProvider>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setAddSlotOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={() => setAddSlotOpen(false)} color="inherit">
+            Cancel
+          </Button>
           <Button variant="contained" onClick={addSlot} disabled={addingSlot}>
-            {addingSlot ? 'Adding...' : 'Add Slot'}
+            {addingSlot ? "Adding..." : "Add Slot"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Book Appointment Dialog */}
-      <Dialog open={bookOpen} onClose={() => setBookOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={bookOpen}
+        onClose={() => setBookOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle fontWeight={600}>Book Appointment</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Booking with {selectedProvider?.name} at{' '}
-            {bookingSlot && new Date(bookingSlot.slot_time).toLocaleTimeString('en-US', {
-              hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC'
-            })}
+            Booking with {selectedProvider?.name} at{" "}
+            {bookingSlot &&
+              new Date(bookingSlot.slot_time).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+                timeZone: "UTC",
+              })}
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
-                label="First name" size="small" fullWidth
+                label="First name"
+                size="small"
+                fullWidth
                 value={bookForm.first_name}
-                onChange={e => setBookForm(p => ({ ...p, first_name: e.target.value }))}
+                onChange={(e) =>
+                  setBookForm((p) => ({ ...p, first_name: e.target.value }))
+                }
               />
               <TextField
-                label="Last name" size="small" fullWidth
+                label="Last name"
+                size="small"
+                fullWidth
                 value={bookForm.last_name}
-                onChange={e => setBookForm(p => ({ ...p, last_name: e.target.value }))}
+                onChange={(e) =>
+                  setBookForm((p) => ({ ...p, last_name: e.target.value }))
+                }
               />
             </Box>
             <TextField
-              label="Date of birth" size="small" fullWidth placeholder="YYYY-MM-DD"
+              label="Date of birth"
+              size="small"
+              fullWidth
+              placeholder="YYYY-MM-DD"
               value={bookForm.dob}
-              onChange={e => setBookForm(p => ({ ...p, dob: e.target.value }))}
+              onChange={(e) =>
+                setBookForm((p) => ({ ...p, dob: e.target.value }))
+              }
             />
             <TextField
-              label="Phone" size="small" fullWidth
+              label="Phone"
+              size="small"
+              fullWidth
               value={bookForm.phone}
-              onChange={e => setBookForm(p => ({ ...p, phone: e.target.value }))}
+              onChange={(e) =>
+                setBookForm((p) => ({ ...p, phone: e.target.value }))
+              }
             />
             <TextField
-              label="Email" size="small" fullWidth
+              label="Email"
+              size="small"
+              fullWidth
               value={bookForm.email}
-              onChange={e => setBookForm(p => ({ ...p, email: e.target.value }))}
+              onChange={(e) =>
+                setBookForm((p) => ({ ...p, email: e.target.value }))
+              }
             />
             <TextField
-              label="Reason for visit" size="small" fullWidth multiline rows={2}
+              label="Reason for visit"
+              size="small"
+              fullWidth
+              multiline
+              rows={2}
               value={bookForm.reason}
-              onChange={e => setBookForm(p => ({ ...p, reason: e.target.value }))}
+              onChange={(e) =>
+                setBookForm((p) => ({ ...p, reason: e.target.value }))
+              }
             />
             <FormControlLabel
               control={
                 <Switch
                   checked={bookForm.sms_opt_in}
-                  onChange={e => setBookForm(p => ({ ...p, sms_opt_in: e.target.checked }))}
+                  onChange={(e) =>
+                    setBookForm((p) => ({ ...p, sms_opt_in: e.target.checked }))
+                  }
                   color="success"
                 />
               }
@@ -242,13 +395,15 @@ export default function AdminPage() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setBookOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={() => setBookOpen(false)} color="inherit">
+            Cancel
+          </Button>
           <Button
             variant="contained"
             onClick={bookAppointment}
             disabled={booking || !bookForm.first_name || !bookForm.email}
           >
-            {booking ? 'Booking...' : 'Book Appointment'}
+            {booking ? "Booking..." : "Book Appointment"}
           </Button>
         </DialogActions>
       </Dialog>
