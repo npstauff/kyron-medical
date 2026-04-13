@@ -25,9 +25,15 @@ const slideUp = keyframes`
 
 const MarkdownComponents = {
   p: ({ children }) => (
-    <span style={{ display: 'block', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 4 }}>
+    <div style={{ fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 4 }}>
       {children}
-    </span>
+    </div>
+  ),
+  ul: ({ children }) => (
+    <ul style={{ paddingLeft: 20, margin: '4px 0' }}>{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol style={{ paddingLeft: 20, margin: '4px 0' }}>{children}</ol>
   ),
   li: ({ children }) => (
     <li style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{children}</li>

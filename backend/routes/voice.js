@@ -102,7 +102,17 @@ router.post("/initiate", async (req, res) => {
       }),
     });
 
-    const data = await dialRes.json();
+    const dialText = await dialRes.text();
+    console.log("Vogent dial response:", dialRes.status, dialText);
+
+    if (!dialRes.ok) {
+      return res
+        .status(500)
+        .json({ error: "Failed to initiate call", detail: dialText });
+    }
+
+    const data = JSON.parse(dialText);
+    res.json({ success: true, dialId: data.dialId });
 
     if (!dialRes.ok) {
       console.error("Vogent dial error:", data);
