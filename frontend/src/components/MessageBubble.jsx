@@ -1,5 +1,41 @@
 import { Avatar, Box, colors, Paper, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
+import { keyframes } from '@mui/system'
+
+const slideInRight = keyframes`
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+`
+
+const slideInLeft = keyframes`
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+`
+
+const slideUp = keyframes`
+  from { 
+    opacity: 0; 
+    transform: translateY(16px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+`
+
+const MarkdownComponents = {
+  p: ({ children }) => (
+    <span style={{ display: 'block', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 4 }}>
+      {children}
+    </span>
+  ),
+  li: ({ children }) => (
+    <li style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{children}</li>
+  ),
+  strong: ({ children }) => (
+    <strong style={{ fontWeight: 600 }}>{children}</strong>
+  ),
+}
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";
@@ -11,6 +47,7 @@ export default function MessageBubble({ message }) {
         display: "flex",
         justifyContent: isUser ? "flex-end" : "flex-start",
         gap: 1,
+        animation: `${slideUp} 0.2s ease-out`,
       }}
     >
       {!isUser ? (
@@ -36,7 +73,7 @@ export default function MessageBubble({ message }) {
         }}
       >
         <Typography>
-          <ReactMarkdown>{message.text}</ReactMarkdown>
+          <ReactMarkdown components={MarkdownComponents}>{message.text}</ReactMarkdown>
         </Typography>
       </Paper>
       {isUser ? (

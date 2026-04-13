@@ -18,6 +18,13 @@ import SendIcon from "@mui/icons-material/Send";
 import PhoneIcon from "@mui/icons-material/Phone";
 import TypingIndicator from "../components/TypingIndicator";
 import { useRef } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+} from "@mui/material";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -26,6 +33,10 @@ export default function ChatPage() {
 
   const [currentMessage, setCurrentMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
+  const [callPhone, setCallPhone] = useState("");
+  const [callLoading, setCallLoading] = useState(false);
 
   var bottomRef = useRef();
 
@@ -78,6 +89,40 @@ export default function ChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const initiateCall = async () => {
+    if (!callPhone.trim()) return;
+    setCallLoading(true);
+
+    try {
+      await axios.post(`${API_URL}/api/voice/initiate`, {
+        sessionId,
+        phoneNumber: callPhone,
+      });
+      setCallDialogOpen(false);
+      setCallPhone("");
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: `Calling you now at ${callPhone}! The AI will continue our conversation seamlessly over the phone.`,
+        },
+      ]);
+    } catch (err) {
+      console.error("Call failed:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: "Sorry, we were unable to initiate the call. Please try again.",
+        },
+      ]);
+      setCallDialogOpen(false);
+    } finally {
+      setCallLoading(false);
+    }
+  };
 
   const sendMessage = async () => {
     if (!currentMessage.trim() || loading) {
@@ -144,7 +189,7 @@ export default function ChatPage() {
             <Chip
               icon={<PhoneIcon sx={{ fontSize: 16 }} />}
               label="Switch to Call"
-              onClick={() => alert("Voice call coming soon!")}
+              onClick={() => setCallDialogOpen(true)}
               sx={{
                 bgcolor: "secondary.main",
                 color: "white",
@@ -206,6 +251,43 @@ export default function ChatPage() {
         For medical emergencies call 911. This assistant cannot provide medical
         advice.
       </Typography>
+      <Dialog
+        open={callDialogOpen}
+        onClose={() => setCallDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Switch to Voice Call</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enter your phone number and we'll call you right away. The AI will
+            pick up exactly where your chat left off.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Phone number"
+            placeholder="+1 (555) 000-0000"
+            value={callPhone}
+            onChange={(e) => setCallPhone(e.target.value)}
+            size="small"
+            onKeyDown={(e) => e.key === "Enter" && initiateCall()}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCallDialogOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={initiateCall}
+            disabled={!callPhone.trim() || callLoading}
+          >
+            {callLoading ? "Calling..." : "Call Me Now"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

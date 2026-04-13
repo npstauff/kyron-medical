@@ -2,14 +2,12 @@ const express = require('express');
 const router = express.Router();
 const sequelize = require('../models');
 
-const VOICE_SYSTEM_PROMPT = `You are a friendly, professional medical scheduling assistant for Kyron Medical.
-You are on a PHONE CALL with a patient. Keep responses concise and conversational.
+const BASE_PROMPT = `You are a friendly, professional medical scheduling assistant for Kyron Medical. You are on a PHONE CALL with a patient. Keep responses concise and conversational.
 
 IMPORTANT RULES:
 - Never provide medical advice, diagnoses, or treatment recommendations
 - Never say anything that could be construed as a medical opinion
 - Keep responses short and natural for voice — no bullet points or markdown
-- Do not re-ask for information already provided in the conversation
 
 The practice has four specialists:
 - Dr. Sarah Chen — Cardiologist (heart)
@@ -55,11 +53,22 @@ router.post('/initiate', async (req, res) => {
     const messages = rows[0]?.messages || [];
     const historyText = formatHistoryForVoice(messages);
 
-    const systemPrompt = historyText.length > 0
-      ? `${VOICE_SYSTEM_PROMPT}\n\nPRIOR WEB CHAT CONTEXT:\n${historyText}\n\nYou are continuing this conversation by phone. Greet the patient by name if you know it and pick up naturally from where the chat left off.`
-      : `${VOICE_SYSTEM_PROMPT}\n\nThis patient is starting fresh by phone. Greet them warmly and ask how you can help.`;
+    // Build the full prompt with context
+    const fullPrompt = historyText.length > 0
+      ? `${BASE_PROMPT}\n\nPRIOR WEB CHAT CONTEXT:\n${historyText}\n\nYou are continuing this conversation by phone. Greet the patient by name if you know it and pick up naturally from where the chat left off. Do not re-ask for information already provided.`
+      : `${BASE_PROMPT}\n\nThis patient is starting fresh by phone. Greet them warmly and ask how you can help.`;
 
-    // Create dial via Vogent API
+    // Update the agent prompt via Vogent API before dialing
+    await fetch(`https://api.vogent.ai/api/agents/${process.env.VOGENT_AGENT_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${process.env.VOGENT_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prompt: fullPrompt })
+    });
+
+    // Create the dial
     const response = await fetch('https://api.vogent.ai/api/dials', {
       method: 'POST',
       headers: {
@@ -71,20 +80,14 @@ router.post('/initiate', async (req, res) => {
         fromNumberId: process.env.VOGENT_PHONE_NUMBER_ID,
         toNumber: phoneNumber,
         browserCall: false,
-        timeoutMinutes: 10,
-        agentOverrides: {
-          metadata: { sessionId }
-        },
-        callAgentInput: {
-          systemPrompt
-        }
+        timeoutMinutes: 10
       })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Vogent error:', data);
+      console.error('Vogent dial error:', data);
       return res.status(500).json({ error: data.message || 'Failed to initiate call' });
     }
 
