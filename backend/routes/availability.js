@@ -21,9 +21,9 @@ router.get('/providers', async (req, res) => {
   try {
     const [providers] = await sequelize.query(`
       SELECT p.id, p.name, p.specialty, p.body_part,
-             COUNT(s.id) as total_slots,
-             COUNT(CASE WHEN s.is_booked = false THEN 1 END) as available,
-             COUNT(CASE WHEN s.is_booked = true THEN 1 END) as booked
+             COUNT(s.id)::int as total_slots,
+             COUNT(CASE WHEN s.is_booked = false THEN 1 END)::int as available,
+             COUNT(CASE WHEN s.is_booked = true THEN 1 END)::int as booked
       FROM providers p
       LEFT JOIN availability_slots s ON p.id = s.provider_id
       GROUP BY p.id, p.name, p.specialty, p.body_part
