@@ -17,6 +17,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/providers', async (req, res) => {
+  try {
+    const [providers] = await sequelize.query(`
+      SELECT p.id, p.name, p.specialty, p.body_part,
+             COUNT(s.id) as total_slots,
+             COUNT(CASE WHEN s.is_booked = false THEN 1 END) as available,
+             COUNT(CASE WHEN s.is_booked = true THEN 1 END) as booked
+      FROM providers p
+      LEFT JOIN availability_slots s ON p.id = s.provider_id
+      GROUP BY p.id, p.name, p.specialty, p.body_part
+      ORDER BY p.name
+    `);
+    res.json({ providers });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.patch('/:slotId', async (req, res) => {
   const { slotId } = req.params;
   const { is_booked } = req.body;

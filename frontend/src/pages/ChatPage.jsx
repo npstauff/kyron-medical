@@ -25,6 +25,8 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import AppTopBar from "../components/AppTopBar";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -37,6 +39,8 @@ export default function ChatPage() {
   const [callDialogOpen, setCallDialogOpen] = useState(false);
   const [callPhone, setCallPhone] = useState("");
   const [callLoading, setCallLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   var bottomRef = useRef();
 
@@ -170,43 +174,7 @@ export default function ChatPage() {
         padding: 1,
       }}
     >
-      <AppBar
-        position="static"
-        elevation={1}
-        sx={{ bgcolor: "white", color: "text.primary" }}
-      >
-        <Toolbar>
-          <Avatar sx={{ bgcolor: "primary.main", fontWeight: 700, mr: 2 }}>
-            K
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2}>
-              Kyron Medical
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: "success.main", fontWeight: 500 }}
-            >
-              ● Online
-            </Typography>
-          </Box>
-          <Tooltip title="Switch to voice call">
-            <Chip
-              icon={<PhoneIcon sx={{ fontSize: 16 }} />}
-              label="Switch to Call"
-              onClick={() => setCallDialogOpen(true)}
-              sx={{
-                bgcolor: "secondary.main",
-                color: "white",
-                fontWeight: 500,
-                "& .MuiChip-icon": { color: "white" },
-                "&:hover": { bgcolor: "#1b5e20" },
-                cursor: "pointer",
-              }}
-            />
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
+      <AppTopBar switchPage={() => {navigate('/admin')}} isAdmin={false} setCallDialogOpen={setCallDialogOpen}/>
 
       <Box
         sx={{
@@ -313,3 +281,5 @@ export default function ChatPage() {
     </Box>
   );
 }
+
+
