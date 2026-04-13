@@ -12,7 +12,7 @@ export default function Slot({ slot, onBook, onCancel, onDelete }) {
       borderColor: slot.is_booked ? "error.main" : "primary.main",
       borderWidth: "1px",
       borderStyle: "solid",
-      borderRadius: 2,
+      borderRadius: 1,
       opacity: slot.is_booked ? 0.7 : 1
     }}>
       <Typography>
