@@ -15,6 +15,5 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/availability', require('./routes/availability'));
 app.use('/api/voice', require('./routes/voice'));
-app.use('/api/dev', require('./routes/dev'));
 
 module.exports = app;
