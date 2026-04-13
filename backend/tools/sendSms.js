@@ -5,7 +5,7 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-async function sendAppointmenSms({ patient, appointment }) {
+async function sendAppointmentSms({ patient, appointment }) {
   const appointmentDate = new Date(appointment.slot_time).toLocaleString(
     "en-US",
     {
