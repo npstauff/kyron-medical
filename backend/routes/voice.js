@@ -143,7 +143,8 @@ router.post("/initiate", async (req, res) => {
 });
 
 router.post('/webhook', async (req, res) => {
-  console.log('Vogent webhook received:', JSON.stringify(req.body, null, 2));
+  console.log('WEBHOOK EVENT:', req.body.event);
+  console.log('FULL BODY:', JSON.stringify(req.body, null, 2));
 
   const { type, data } = req.body;
 
