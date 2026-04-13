@@ -1,9 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Anthropic = require('@anthropic-ai/sdk');
-const sequelize = require('../models');
-const getAvailability = require('../tools/getAvailability');
-const bookAppointment = require('../tools/bookAppointment');
+const Anthropic = require("@anthropic-ai/sdk");
+const sequelize = require("../models");
+const getAvailability = require("../tools/getAvailability");
+const bookAppointment = require("../tools/bookAppointment");
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -35,111 +35,135 @@ If the patient asks about a body part or condition not covered by our specialist
 
 const tools = [
   {
-    name: 'get_availability',
-    description: 'Get available appointment slots for a given body part or condition',
+    name: "get_availability",
+    description:
+      "Get available appointment slots for a given body part or condition",
     input_schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        body_part: { type: 'string', description: 'The body part e.g. heart, skin, bones, brain' },
-        date_preference: { type: 'string', description: 'Optional date preference e.g. Tuesday, next week' }
+        body_part: {
+          type: "string",
+          description: "The body part e.g. heart, skin, bones, brain",
+        },
+        date_preference: {
+          type: "string",
+          description: "Optional date preference e.g. Tuesday, next week",
+        },
       },
-      required: ['body_part']
-    }
+      required: ["body_part"],
+    },
   },
   {
-    name: 'book_appointment',
-    description: 'Book an appointment slot for a patient',
+    name: "book_appointment",
+    description: "Book an appointment slot for a patient",
     input_schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        slot_id: { type: 'number' },
-        first_name: { type: 'string' },
-        last_name: { type: 'string' },
-        dob: { type: 'string' },
-        phone: { type: 'string' },
-        email: { type: 'string' },
-        sms_opt_in: { type: 'boolean' },
-        reason: { type: 'string' }
+        slot_id: { type: "number" },
+        first_name: { type: "string" },
+        last_name: { type: "string" },
+        dob: { type: "string" },
+        phone: { type: "string" },
+        email: { type: "string" },
+        sms_opt_in: { type: "boolean" },
+        reason: { type: "string" },
       },
-      required: ['slot_id', 'first_name', 'last_name', 'dob', 'phone', 'email']
-    }
-  }
+      required: ["slot_id", "first_name", "last_name", "dob", "phone", "email"],
+    },
+  },
 ];
 
-router.post('/', async (req, res) => {
-    const {sessionId, message} = req.body;
+router.post("/", async (req, res) => {
+  const { sessionId, message } = req.body;
 
-    if(!sessionId || !message) {
-        return res.status(400).json({error: "sessionId and message are required"})
-    }
+  if (!sessionId || !message) {
+    return res
+      .status(400)
+      .json({ error: "sessionId and message are required" });
+  }
 
-    try {
-        let [conv] = await sequelize.query(
-        `SELECT * FROM conversations WHERE session_id = $1`,
-            { bind: [sessionId] }
-        );
+  try {
+    let [
+      conv,
+    ] = await sequelize.query(
+      `SELECT * FROM conversations WHERE session_id = $1`,
+      { bind: [sessionId] }
+    );
 
-        let messages = conv[0] ? conv[0].messages : [];
-        messages.push({ role: 'user', content: message });
+    let messages = conv[0] ? conv[0].messages : [];
+    messages.push({ role: "user", content: message });
 
-        let response;
-        while(true) {
-            response = await client.messages.create({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 1024,
-                system: SYSTEM_PROMPT,
-                tools,
-                messages
-            });
+    let response;
+    while (true) {
+      response = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        tools,
+        messages,
+      });
 
-            messages.push({ role: 'assistant', content: response.content });
+      messages.push({ role: "assistant", content: response.content });
 
-            if(response.stop_reason !== 'tool_use') break;
+      if (response.stop_reason !== "tool_use") break;
 
-            const toolResults = [];
-            for(const block of response.content) {
-                if(block.type !== 'tool_use') continue;
-                
-                let result;
-                if(block.name === 'get_availability') {
-                    result = await getAvailability(block.input.body_part, block.input.date_preference);
-                } else if(block.name === 'book_appointment') {
-                    result = await bookAppointment({
-                        slotId: block.input.slot_id,
-                        firstName: block.input.first_name,
-                        lastName: block.input.last_name,
-                        dob: block.input.dob,
-                        phone: block.input.phone,
-                        email: block.input.email,
-                        smsOptIn: block.input.sms_opt_in,
-                        reason: block.input.reason
-                    });
-                }
+      const toolResults = [];
+      for (const block of response.content) {
+        if (block.type !== "tool_use") continue;
 
-                toolResults.push({
-                    type: 'tool_result',
-                    tool_use_id: block.id,
-                    content: JSON.stringify(result)
-                })
-            }
-
-            messages.push({role: "user", content: toolResults});
+        let result;
+        if (block.name === "get_availability") {
+          result = await getAvailability(
+            block.input.body_part,
+            block.input.date_preference
+          );
+        } else if (block.name === "book_appointment") {
+          result = await bookAppointment({
+            slotId: block.input.slot_id,
+            firstName: block.input.first_name,
+            lastName: block.input.last_name,
+            dob: block.input.dob,
+            phone: block.input.phone,
+            email: block.input.email,
+            smsOptIn: block.input.sms_opt_in,
+            reason: block.input.reason,
+          });
         }
 
-        await sequelize.query(`
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: block.id,
+          content: JSON.stringify(result),
+        });
+      }
+
+      await sequelize.query(
+        `
+  INSERT INTO conversations (session_id, messages, updated_at)
+  VALUES ($1, $2, NOW())
+  ON CONFLICT (session_id) DO UPDATE SET messages = $2, updated_at = NOW()
+`,
+        { bind: [sessionId, JSON.stringify(messages)] }
+      );
+
+      messages.push({ role: "user", content: toolResults });
+    }
+
+    await sequelize.query(
+      `
             INSERT INTO conversations (session_id, messages, updated_at)
             VALUES ($1, $2, NOW())
             ON CONFLICT (session_id) DO UPDATE SET messages = $2, updated_at = NOW()
-        `, { bind: [sessionId, JSON.stringify(messages)] });
+        `,
+      { bind: [sessionId, JSON.stringify(messages)] }
+    );
 
-        const textBlock = response.content.find(b => b.type === 'text');
-        res.json({ reply: textBlock?.text || 'Sorry, something went wrong.' });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-    
+    const textBlock = response.content.find((b) => b.type === "text");
+    res.json({ reply: textBlock?.text || "Sorry, something went wrong." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

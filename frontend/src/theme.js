@@ -3,10 +3,12 @@ import { createTheme } from '@mui/material'
 export default createTheme({
   palette: {
     primary: {
-      main: '#1565C0',
+      main: '#BA8EE3',
+      compliment: "#8969A7"
     },
     secondary: {
-      main: '#2E7D32',
+      main: '#87ACE1',
+      compliment: "#6681A7"
     },
     background: {
       default: '#f5f7fa',
