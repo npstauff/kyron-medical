@@ -35,6 +35,19 @@ router.get('/providers', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  const { provider_id, slot_time } = req.body;
+  try {
+    await sequelize.query(
+      `INSERT INTO availability_slots (provider_id, slot_time) VALUES (:provider_id, :slot_time)`,
+      { replacements: { provider_id, slot_time } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.patch('/:slotId', async (req, res) => {
   const { slotId } = req.params;
   const { is_booked } = req.body;
