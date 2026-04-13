@@ -146,15 +146,16 @@ router.post('/webhook', async (req, res) => {
   console.log('WEBHOOK EVENT:', req.body.event);
   console.log('FULL BODY:', JSON.stringify(req.body, null, 2));
 
-  const { type, data } = req.body;
+  const { event, payload, params } = req.body;
 
-  if (type === 'function_call' || type === 'tool_call') {
-    const toolName = data?.name || data?.function?.name;
-    const toolInput = data?.input || data?.arguments;
+  // Direct function call — no event wrapper, just params
+  if (!event && params) {
+    const body_part = params.body_part;
+    const slot_id = params.slot_id;
 
-    if (toolName === 'get_availability') {
+    if (body_part) {
       try {
-        const slots = await getAvailability(toolInput.body_part);
+        const slots = await getAvailability(body_part);
         const formatted = slots.length > 0
           ? slots.map(s => `${s.provider_name} on ${new Date(s.slot_time).toLocaleString('en-US', {
               weekday: 'long', month: 'long', day: 'numeric',
@@ -162,6 +163,7 @@ router.post('/webhook', async (req, res) => {
             })}, slot ID ${s.id}`).join('. ')
           : 'No available slots for that specialty.';
 
+        console.log('Returning availability:', formatted);
         return res.json({ result: formatted });
       } catch (err) {
         console.error('get_availability error:', err);
@@ -169,17 +171,17 @@ router.post('/webhook', async (req, res) => {
       }
     }
 
-    if (toolName === 'book_appointment') {
+    if (slot_id) {
       try {
         const result = await bookAppointment({
-          slotId: toolInput.slot_id,
-          firstName: toolInput.first_name,
-          lastName: toolInput.last_name,
-          dob: toolInput.dob,
-          phone: toolInput.phone,
-          email: toolInput.email,
-          smsOptIn: toolInput.sms_opt_in || false,
-          reason: toolInput.reason
+          slotId: params.slot_id,
+          firstName: params.first_name,
+          lastName: params.last_name,
+          dob: params.dob,
+          phone: params.phone,
+          email: params.email,
+          smsOptIn: params.sms_opt_in || false,
+          reason: params.reason
         });
 
         return res.json({
@@ -192,6 +194,7 @@ router.post('/webhook', async (req, res) => {
     }
   }
 
+  // Dial lifecycle events
   res.json({ success: true });
 });
 
