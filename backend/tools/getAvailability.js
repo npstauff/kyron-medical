@@ -1,5 +1,6 @@
 const sequelize = require('../models')
 
+//returns 
 async function getAvailability(bodyPart, datePreference) {
     const [slots] = await sequelize.query(`
     SELECT s.id, s.slot_time, p.name as provider_name, p.specialty, p.body_part
