@@ -1,4 +1,5 @@
 import { Avatar, Box, colors, Paper, Typography } from "@mui/material";
+import ReactMarkdown from 'react-markdown'
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";

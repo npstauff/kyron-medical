@@ -1,5 +1,5 @@
 const sequelize = require('../models');
-const sendAppointmentConfirmation = require('../utils/sendEmail');
+const sendAppointmentConfirmation = require('../tools/sendEmail');
 
 async function bookAppointment({ slotId, firstName, lastName, dob, phone, email, smsOptIn, reason }) {
   const [patient] = await sequelize.query(`
