@@ -12,7 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export default function ChatPage() {
 
-    const [messages, setMessages] = useState();
+    const [messages, setMessages] = useState([]);
 
     const [sessionId] = useState(() => {
         const stored = localStorage.getItem("kyron_session_id")
@@ -26,7 +26,6 @@ export default function ChatPage() {
     // Load previous conversation on mount
     useEffect(() => {
         const loadConversation = async () => {
-            console.log("loading convo");
             try {
                 const res = await axios.get(`${API_URL}/api/conversations/${sessionId}`)
             
@@ -50,8 +49,8 @@ export default function ChatPage() {
     }, [sessionId])
 
     return <Box>
-        {messages.map((msg, i) => {
+        {messages.map((msg, i) => (
             <MessageBubble key={i} message={msg} />
-        })}
+        ))}
     </Box>
 }
