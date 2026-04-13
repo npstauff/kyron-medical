@@ -35,7 +35,6 @@ function formatHistoryForVoice(messages) {
     .join('\n')
 }
 
-// POST /api/voice/initiate
 router.post('/initiate', async (req, res) => {
   const { sessionId, phoneNumber } = req.body;
 
@@ -53,23 +52,35 @@ router.post('/initiate', async (req, res) => {
     const messages = rows[0]?.messages || [];
     const historyText = formatHistoryForVoice(messages);
 
-    // Build the full prompt with context
     const fullPrompt = historyText.length > 0
       ? `${BASE_PROMPT}\n\nPRIOR WEB CHAT CONTEXT:\n${historyText}\n\nYou are continuing this conversation by phone. Greet the patient by name if you know it and pick up naturally from where the chat left off. Do not re-ask for information already provided.`
       : `${BASE_PROMPT}\n\nThis patient is starting fresh by phone. Greet them warmly and ask how you can help.`;
 
-    // Update the agent prompt via Vogent API before dialing
-    await fetch(`https://api.vogent.ai/api/agents/${process.env.VOGENT_AGENT_ID}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${process.env.VOGENT_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ prompt: fullPrompt })
-    });
+    // Update the versioned prompt with conversation context
+    const promptRes = await fetch(
+      `https://api.vogent.ai/api/agents/${process.env.VOGENT_AGENT_ID}/versioned_prompts/${process.env.VOGENT_PROMPT_ID}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${process.env.VOGENT_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          agentType: 'STANDARD',
+          prompt: fullPrompt,
+          name: 'kyron-medical-prompt'
+        })
+      }
+    );
+
+    if (!promptRes.ok) {
+      const err = await promptRes.text();
+      console.error('Vogent prompt update error:', err);
+      return res.status(500).json({ error: 'Failed to update agent prompt' });
+    }
 
     // Create the dial
-    const response = await fetch('https://api.vogent.ai/api/dials', {
+    const dialRes = await fetch('https://api.vogent.ai/api/dials', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.VOGENT_API_KEY}`,
@@ -84,9 +95,9 @@ router.post('/initiate', async (req, res) => {
       })
     });
 
-    const data = await response.json();
+    const data = await dialRes.json();
 
-    if (!response.ok) {
+    if (!dialRes.ok) {
       console.error('Vogent dial error:', data);
       return res.status(500).json({ error: data.message || 'Failed to initiate call' });
     }
