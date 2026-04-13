@@ -1,15 +1,27 @@
-import { Avatar, Box, colors, Typography } from "@mui/material";
+import { Avatar, Box, colors, Paper, Typography } from "@mui/material";
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";
 
   return (
-    <Box sx={{
+    <Box
+      sx={{
         width: "100%",
         display: "flex",
         justifyContent: isUser ? "flex-end" : "flex-start",
-    }}>
-      <Box
+        gap: 1,
+      }}
+    >
+      {!isUser ? (
+        <Avatar
+          sx={{
+            bgcolor: isUser ? "primary.compliment" : "secondary.compliment",
+          }}
+        >
+          K
+        </Avatar>
+      ) : null}
+      <Paper
         sx={{
           display: "flex",
           maxWidth: "75%",
@@ -22,26 +34,17 @@ export default function MessageBubble({ message }) {
           bgcolor: isUser ? "primary.main" : "secondary.main",
         }}
       >
-        {!isUser ? (
-          <Avatar
-            sx={{
-              bgcolor: isUser ? "primary.compliment" : "secondary.compliment",
-            }}
-          >
-            A
-          </Avatar>
-        ) : null}
         <Typography>{message.text}</Typography>
-        {isUser ? (
-          <Avatar
-            sx={{
-              bgcolor: isUser ? "primary.compliment" : "secondary.compliment",
-            }}
-          >
-            Me
-          </Avatar>
-        ) : null}
-      </Box>
+      </Paper>
+      {isUser ? (
+        <Avatar
+          sx={{
+            bgcolor: isUser ? "primary.compliment" : "secondary.compliment",
+          }}
+        >
+          Me
+        </Avatar>
+      ) : null}
     </Box>
   );
 }

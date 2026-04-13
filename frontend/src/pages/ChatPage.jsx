@@ -2,19 +2,32 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
-import { Box, IconButton, TextField } from "@mui/material";
+import {
+  AppBar,
+  Avatar,
+  Box,
+  Chip,
+  IconButton,
+  TextField,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import MessageBubble from "../components/MessageBubble";
 import SendIcon from "@mui/icons-material/Send";
+import PhoneIcon from "@mui/icons-material/Phone";
 import TypingIndicator from "../components/TypingIndicator";
+import { useRef } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
 
-  const [currentMessage, setCurrentMessage] = useState('');
+  const [currentMessage, setCurrentMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  var bottomRef = useRef();
 
   const [sessionId] = useState(() => {
     const stored = localStorage.getItem("kyron_session_id");
@@ -56,40 +69,46 @@ export default function ChatPage() {
   }, [sessionId]);
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
-  }
+  };
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = async () => {
-
-    if(!currentMessage.trim() || loading){
-        return;
+    if (!currentMessage.trim() || loading) {
+      return;
     }
 
     const userMessage = currentMessage.trim();
-    setCurrentMessage('');
+    setCurrentMessage("");
     setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
-setLoading(true);
+    setLoading(true);
 
     try {
-        
-        const res = await axios.post(`${API_URL}/api/chat`, {
-            sessionId,
-            message: userMessage
-        });
-        
+      const res = await axios.post(`${API_URL}/api/chat`, {
+        sessionId,
+        message: userMessage,
+      });
 
-        setMessages((prev) => [...prev, { role: "assistant", text: res.data.reply }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: res.data.reply },
+      ]);
     } catch (err) {
-        console.error("Failed to send message:", err);
-        setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, something went wrong." }]);
+      console.error("Failed to send message:", err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "Sorry, something went wrong." },
+      ]);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-
-  }
+  };
 
   return (
     <Box
@@ -101,10 +120,48 @@ setLoading(true);
         padding: 1,
       }}
     >
+      <AppBar
+        position="static"
+        elevation={1}
+        sx={{ bgcolor: "white", color: "text.primary" }}
+      >
+        <Toolbar>
+          <Avatar sx={{ bgcolor: "primary.main", fontWeight: 700, mr: 2 }}>
+            K
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600} lineHeight={1.2}>
+              Kyron Medical
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: "success.main", fontWeight: 500 }}
+            >
+              ● Online
+            </Typography>
+          </Box>
+          <Tooltip title="Switch to voice call">
+            <Chip
+              icon={<PhoneIcon sx={{ fontSize: 16 }} />}
+              label="Switch to Call"
+              onClick={() => alert("Voice call coming soon!")}
+              sx={{
+                bgcolor: "secondary.main",
+                color: "white",
+                fontWeight: 500,
+                "& .MuiChip-icon": { color: "white" },
+                "&:hover": { bgcolor: "#1b5e20" },
+                cursor: "pointer",
+              }}
+            />
+          </Tooltip>
+        </Toolbar>
+      </AppBar>
+
       <Box
         sx={{
           padding: 2,
-          flex:1,
+          flex: 1,
           overflow: "auto",
         }}
       >
@@ -112,6 +169,7 @@ setLoading(true);
           <MessageBubble key={i} message={msg} />
         ))}
         {loading && <TypingIndicator />}
+        <div ref={bottomRef} />
       </Box>
       <Box
         sx={{
@@ -132,7 +190,7 @@ setLoading(true);
           onKeyDown={handleKeyDown}
           value={currentMessage}
         ></TextField>
-        <IconButton  onClick={sendMessage}>
+        <IconButton onClick={sendMessage}>
           <SendIcon
             sx={{
               width: "5vh",
@@ -140,6 +198,14 @@ setLoading(true);
           />
         </IconButton>
       </Box>
+      <Typography
+        variant="caption"
+        color="text.disabled"
+        sx={{ display: "block", textAlign: "center", mt: 1 }}
+      >
+        For medical emergencies call 911. This assistant cannot provide medical
+        advice.
+      </Typography>
     </Box>
   );
 }

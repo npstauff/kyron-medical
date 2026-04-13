@@ -1,4 +1,5 @@
 const sequelize = require('../models');
+const sendAppointmentConfirmation = require('../utils/sendEmail');
 
 async function bookAppointment({ slotId, firstName, lastName, dob, phone, email, smsOptIn, reason }) {
   const [patient] = await sequelize.query(`
@@ -19,10 +20,20 @@ async function bookAppointment({ slotId, firstName, lastName, dob, phone, email,
     WHERE s.id = :slotId
   `, { replacements: { slotId } });
 
-  return {
+  const result = {
     patient: patient[0],
     appointment: slotDetails[0]
-  };
+  }
+
+  // Send confirmation email
+  try {
+    await sendAppointmentConfirmation(result)
+  } catch (err) {
+    console.error('Email failed:', err.message)
+    // Don't fail the booking if email fails
+  }
+
+  return result
 }
 
 module.exports = bookAppointment;
