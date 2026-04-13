@@ -8,5 +8,6 @@ app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/conversations', require('./routes/conversations'));
 
 module.exports = app;
