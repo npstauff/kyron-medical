@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const sequelize = require('../models');
+const sequelize = require("../models");
 
 const BASE_PROMPT = `You are a friendly, professional medical scheduling assistant for Kyron Medical. You are on a PHONE CALL with a patient. Keep responses concise and conversational.
 
@@ -20,31 +20,35 @@ Hours: Monday through Friday 8am to 6pm, Saturday 9am to 1pm`;
 
 function formatHistoryForVoice(messages) {
   return messages
-    .filter(m => typeof m.content === 'string' || Array.isArray(m.content))
-    .map(m => {
-      if (typeof m.content === 'string') {
-        return `${m.role === 'user' ? 'Patient' : 'Assistant'}: ${m.content}`
+    .filter((m) => typeof m.content === "string" || Array.isArray(m.content))
+    .map((m) => {
+      if (typeof m.content === "string") {
+        return `${m.role === "user" ? "Patient" : "Assistant"}: ${m.content}`;
       }
       if (Array.isArray(m.content)) {
-        const textBlock = m.content.find(b => b.type === 'text')
-        return textBlock ? `Assistant: ${textBlock.text}` : null
+        const textBlock = m.content.find((b) => b.type === "text");
+        return textBlock ? `Assistant: ${textBlock.text}` : null;
       }
-      return null
+      return null;
     })
     .filter(Boolean)
-    .join('\n')
+    .join("\n");
 }
 
-router.post('/initiate', async (req, res) => {
+router.post("/initiate", async (req, res) => {
   const { sessionId, phoneNumber } = req.body;
 
   if (!sessionId || !phoneNumber) {
-    return res.status(400).json({ error: 'sessionId and phoneNumber are required' });
+    return res
+      .status(400)
+      .json({ error: "sessionId and phoneNumber are required" });
   }
 
   try {
     // Load conversation history
-    const [rows] = await sequelize.query(
+    const [
+      rows,
+    ] = await sequelize.query(
       `SELECT * FROM conversations WHERE session_id = $1`,
       { bind: [sessionId] }
     );
@@ -52,60 +56,64 @@ router.post('/initiate', async (req, res) => {
     const messages = rows[0]?.messages || [];
     const historyText = formatHistoryForVoice(messages);
 
-    const fullPrompt = historyText.length > 0
-      ? `${BASE_PROMPT}\n\nPRIOR WEB CHAT CONTEXT:\n${historyText}\n\nYou are continuing this conversation by phone. Greet the patient by name if you know it and pick up naturally from where the chat left off. Do not re-ask for information already provided.`
-      : `${BASE_PROMPT}\n\nThis patient is starting fresh by phone. Greet them warmly and ask how you can help.`;
+    const fullPrompt =
+      historyText.length > 0
+        ? `${BASE_PROMPT}\n\nPRIOR WEB CHAT CONTEXT:\n${historyText}\n\nYou are continuing this conversation by phone. Greet the patient by name if you know it and pick up naturally from where the chat left off. Do not re-ask for information already provided.`
+        : `${BASE_PROMPT}\n\nThis patient is starting fresh by phone. Greet them warmly and ask how you can help.`;
 
-    // Update the versioned prompt with conversation context
     const promptRes = await fetch(
       `https://api.vogent.ai/api/agents/${process.env.VOGENT_AGENT_ID}/versioned_prompts/${process.env.VOGENT_PROMPT_ID}`,
       {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Authorization': `Bearer ${process.env.VOGENT_API_KEY}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${process.env.VOGENT_API_KEY}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          agentType: 'STANDARD',
+          agentType: "STANDARD",
           prompt: fullPrompt,
-          name: 'kyron-medical-prompt'
-        })
+          name: "kyron-medical-prompt",
+        }),
       }
     );
 
+    const promptText = await promptRes.text();
+    console.log("Vogent prompt response:", promptRes.status, promptText);
+
     if (!promptRes.ok) {
-      const err = await promptRes.text();
-      console.error('Vogent prompt update error:', err);
-      return res.status(500).json({ error: 'Failed to update agent prompt' });
+      return res
+        .status(500)
+        .json({ error: "Failed to update agent prompt", detail: promptText });
     }
 
     // Create the dial
-    const dialRes = await fetch('https://api.vogent.ai/api/dials', {
-      method: 'POST',
+    const dialRes = await fetch("https://api.vogent.ai/api/dials", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${process.env.VOGENT_API_KEY}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${process.env.VOGENT_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         callAgentId: process.env.VOGENT_AGENT_ID,
         fromNumberId: process.env.VOGENT_PHONE_NUMBER_ID,
         toNumber: phoneNumber,
         browserCall: false,
-        timeoutMinutes: 10
-      })
+        timeoutMinutes: 10,
+      }),
     });
 
     const data = await dialRes.json();
 
     if (!dialRes.ok) {
-      console.error('Vogent dial error:', data);
-      return res.status(500).json({ error: data.message || 'Failed to initiate call' });
+      console.error("Vogent dial error:", data);
+      return res
+        .status(500)
+        .json({ error: data.message || "Failed to initiate call" });
     }
 
     res.json({ success: true, dialId: data.dialId });
-
   } catch (err) {
-    console.error('Voice initiate error:', err.message);
+    console.error("Voice initiate error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
