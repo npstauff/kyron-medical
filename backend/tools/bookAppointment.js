@@ -1,5 +1,6 @@
 const sequelize = require('../models');
-const sendAppointmentConfirmation = require('../tools/sendEmail');
+const sendAppointmentConfirmation = require('./sendEmail');
+const sendAppointmentSms = require('./sendSms');
 
 async function bookAppointment({ slotId, firstName, lastName, dob, phone, email, smsOptIn, reason }) {
   const [patient] = await sequelize.query(`
@@ -31,6 +32,12 @@ async function bookAppointment({ slotId, firstName, lastName, dob, phone, email,
   } catch (err) {
     console.error('Email failed:', err.message)
     // Don't fail the booking if email fails
+  }
+
+  try {
+    await sendAppointmentSms(result)
+  } catch (err) {
+    console.error('SMS failed:', err.message)
   }
 
   return result
