@@ -1,5 +1,5 @@
 import { Avatar, Box, colors, Paper, Typography } from "@mui/material";
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown from "react-markdown";
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";
@@ -30,12 +30,14 @@ export default function MessageBubble({ message }) {
           alignItems: "center",
           gap: 1,
           mb: 2,
-          padding: 2,
+          padding: 3,
           borderRadius: 2,
           bgcolor: isUser ? "primary.main" : "secondary.main",
         }}
       >
-        <Typography>{message.text}</Typography>
+        <Typography>
+          <ReactMarkdown>{message.text}</ReactMarkdown>
+        </Typography>
       </Paper>
       {isUser ? (
         <Avatar
