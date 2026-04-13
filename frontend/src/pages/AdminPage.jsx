@@ -12,6 +12,7 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
+import { DateCalendar, TimePicker, DatePicker } from "@mui/x-date-pickers";
 import AppTopBar from "../components/AppTopBar";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -19,7 +20,6 @@ import axios from "axios";
 import { useEffect } from "react";
 import ProviderCard from "../components/ProviderCard";
 import Slot from "../components/Slot";
-import { DateCalendar, TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -37,14 +37,11 @@ export default function AdminPage() {
   const [providers, setProviders] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [selectedDate, setSelectedDate] = useState(dayjs());
-  const [loading, setLoading] = useState(false);
 
-  // Add slot dialog
   const [addSlotOpen, setAddSlotOpen] = useState(false);
   const [newSlotTime, setNewSlotTime] = useState(dayjs().hour(9).minute(0));
   const [addingSlot, setAddingSlot] = useState(false);
 
-  // Book appointment dialog
   const [bookOpen, setBookOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState(null);
   const [bookForm, setBookForm] = useState({
@@ -69,8 +66,6 @@ export default function AdminPage() {
       setSlots(res.data.slots);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -128,35 +123,43 @@ export default function AdminPage() {
   };
 
   const bookAppointment = async () => {
-  setBooking(true);
-  try {
-    await axios.post(`${API_URL}/api/availability/book`, {
-      slot_id: bookingSlot.id,
-      first_name: bookForm.first_name,
-      last_name: bookForm.last_name,
-      dob: bookForm.dob,
-      phone: bookForm.phone,
-      email: bookForm.email,
-      sms_opt_in: bookForm.sms_opt_in,
-      reason: bookForm.reason
-    });
-    await fetchSlots();
-    setBookOpen(false);
-    setBookForm({ first_name: '', last_name: '', dob: '', phone: '', email: '', reason: '', sms_opt_in: false });
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setBooking(false);
-  }
-};
+    setBooking(true);
+    try {
+      await axios.post(`${API_URL}/api/availability/book`, {
+        slot_id: bookingSlot.id,
+        first_name: bookForm.first_name,
+        last_name: bookForm.last_name,
+        dob: bookForm.dob,
+        phone: bookForm.phone,
+        email: bookForm.email,
+        sms_opt_in: bookForm.sms_opt_in,
+        reason: bookForm.reason,
+      });
+      await fetchSlots();
+      setBookOpen(false);
+      setBookForm({
+        first_name: "",
+        last_name: "",
+        dob: "",
+        phone: "",
+        email: "",
+        reason: "",
+        sms_opt_in: false,
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBooking(false);
+    }
+  };
 
   return (
     <Box
       sx={{
         display: "flex",
         flexDirection: "column",
-        width: "100%",
         height: "100vh",
+        overflow: "hidden",
       }}
     >
       <AppTopBar
@@ -167,42 +170,43 @@ export default function AdminPage() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: "row",
-          width: "100%",
-          height: "100%",
+          flexDirection: { xs: "column", md: "row" },
+          flex: 1,
           gap: 1,
           padding: 2,
+          overflow: "hidden",
         }}
       >
-        {!loading ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              width: "40%",
-              gap: 2,
-            }}
-          >
-            {providers.map((p) => (
-              <ProviderCard
-                key={p.id}
-                provider={p}
-                onSelect={() => setSelectedProvider(p)}
-              />
-            ))}
-          </Box>
-        ) : (
-          <Typography>Loading...</Typography>
-        )}
+        {/* Left panel — providers */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "row", md: "column" },
+            flexWrap: { xs: "wrap", md: "nowrap" },
+            width: { xs: "100%", md: "40%" },
+            gap: 2,
+            overflowY: { xs: "visible", md: "auto" },
+            flexShrink: 0,
+          }}
+        >
+          {providers.map((p) => (
+            <ProviderCard
+              key={p.id}
+              provider={p}
+              onSelect={() => setSelectedProvider(p)}
+            />
+          ))}
+        </Box>
 
+        {/* Right panel — calendar + slots */}
         <Paper
           sx={{
-            width: "60%",
-            height: "100%",
-            padding: 2,
+            flex: 1,
             display: "flex",
             flexDirection: "column",
-            overflow: "auto",
+            padding: 2,
+            overflow: "hidden",
+            minHeight: { xs: 400, md: 0 },
           }}
         >
           {selectedProvider !== null ? (
@@ -211,7 +215,7 @@ export default function AdminPage() {
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
-                overflow: "auto",
+                overflowY: "auto",
               }}
             >
               <Typography variant="h6">{selectedProvider.name}</Typography>
@@ -220,7 +224,11 @@ export default function AdminPage() {
               </Typography>
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateCalendar value={selectedDate} onChange={setSelectedDate} />
+                <DateCalendar
+                  value={selectedDate}
+                  onChange={setSelectedDate}
+                  sx={{ width: "100%", maxWidth: 360, alignSelf: "center" }}
+                />
               </LocalizationProvider>
 
               <Box
@@ -339,16 +347,19 @@ export default function AdminPage() {
                 }
               />
             </Box>
-            <TextField
-              label="Date of birth"
-              size="small"
-              fullWidth
-              placeholder="YYYY-MM-DD"
-              value={bookForm.dob}
-              onChange={(e) =>
-                setBookForm((p) => ({ ...p, dob: e.target.value }))
-              }
-            />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Date of birth"
+                value={bookForm.dob ? dayjs(bookForm.dob) : null}
+                onChange={(newValue) =>
+                  setBookForm((p) => ({
+                    ...p,
+                    dob: newValue ? newValue.format("YYYY-MM-DD") : "",
+                  }))
+                }
+                slotProps={{ textField: { fullWidth: true, size: "small" } }}
+              />
+            </LocalizationProvider>
             <TextField
               label="Phone"
               size="small"
@@ -383,7 +394,10 @@ export default function AdminPage() {
                 <Switch
                   checked={bookForm.sms_opt_in}
                   onChange={(e) =>
-                    setBookForm((p) => ({ ...p, sms_opt_in: e.target.checked }))
+                    setBookForm((p) => ({
+                      ...p,
+                      sms_opt_in: e.target.checked,
+                    }))
                   }
                   color="success"
                 />

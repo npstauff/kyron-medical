@@ -1,5 +1,5 @@
 module.exports = {
-    testEnviornment: 'node',
+    testEnvironment: 'node',
     setupFiles: ['dotenv/config'],
     
 }

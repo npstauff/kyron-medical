@@ -1,16 +1,6 @@
-import { Avatar, Box, colors, Paper, Typography } from "@mui/material";
+import { Avatar, Box, Paper, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import { keyframes } from '@mui/system'
-
-const slideInRight = keyframes`
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-`
-
-const slideInLeft = keyframes`
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-`
 
 const slideUp = keyframes`
   from { 
