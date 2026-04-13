@@ -40,6 +40,21 @@ export default function ChatPage() {
   const [callPhone, setCallPhone] = useState("");
   const [callLoading, setCallLoading] = useState(false);
 
+  const [clearing, setClearing] = useState(false);
+
+  const clearChat = async () => {
+  setClearing(true)
+  try {
+    await axios.post(`${API_URL}/api/dev/reset-conversation`, { sessionId })
+    localStorage.removeItem('kyron_session_id')
+    window.location.reload()
+  } catch (err) {
+    console.error('Clear failed:', err)
+  } finally {
+    setClearing(false)
+  }
+}
+
   const navigate = useNavigate();
 
   var bottomRef = useRef();

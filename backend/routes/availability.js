@@ -76,6 +76,26 @@ router.patch('/:slotId/cancel', async (req, res) => {
   }
 });
 
+router.post('/book', async (req, res) => {
+  const { slot_id, first_name, last_name, dob, phone, email, sms_opt_in, reason } = req.body;
+  try {
+    const bookAppointment = require('../tools/bookAppointment');
+    const result = await bookAppointment({
+      slotId: slot_id,
+      firstName: first_name,
+      lastName: last_name,
+      dob,
+      phone,
+      email,
+      smsOptIn: sms_opt_in || false,
+      reason
+    });
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete a slot entirely
 router.delete('/:slotId', async (req, res) => {
   const { slotId } = req.params;

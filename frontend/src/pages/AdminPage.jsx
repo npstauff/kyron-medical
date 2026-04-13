@@ -128,29 +128,27 @@ export default function AdminPage() {
   };
 
   const bookAppointment = async () => {
-    setBooking(true);
-    try {
-      await axios.post(`${API_URL}/api/chat`, {
-        sessionId: `admin-${Date.now()}`,
-        message: `Book appointment for slot ${bookingSlot.id} for patient ${bookForm.first_name} ${bookForm.last_name}, DOB ${bookForm.dob}, phone ${bookForm.phone}, email ${bookForm.email}, reason: ${bookForm.reason}`,
-      });
-      await fetchSlots();
-      setBookOpen(false);
-      setBookForm({
-        first_name: "",
-        last_name: "",
-        dob: "",
-        phone: "",
-        email: "",
-        reason: "",
-        sms_opt_in: false,
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setBooking(false);
-    }
-  };
+  setBooking(true);
+  try {
+    await axios.post(`${API_URL}/api/availability/book`, {
+      slot_id: bookingSlot.id,
+      first_name: bookForm.first_name,
+      last_name: bookForm.last_name,
+      dob: bookForm.dob,
+      phone: bookForm.phone,
+      email: bookForm.email,
+      sms_opt_in: bookForm.sms_opt_in,
+      reason: bookForm.reason
+    });
+    await fetchSlots();
+    setBookOpen(false);
+    setBookForm({ first_name: '', last_name: '', dob: '', phone: '', email: '', reason: '', sms_opt_in: false });
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setBooking(false);
+  }
+};
 
   return (
     <Box
