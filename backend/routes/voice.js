@@ -142,60 +142,52 @@ router.post("/initiate", async (req, res) => {
   }
 });
 
-router.post('/webhook', async (req, res) => {
-  console.log('WEBHOOK EVENT:', req.body.event);
-  console.log('FULL BODY:', JSON.stringify(req.body, null, 2));
+// GET /api/voice/get-availability (Vogent calls this directly)
+router.post('/get-availability', async (req, res) => {
+  console.log('get_availability called:', JSON.stringify(req.body, null, 2));
+  const body_part = req.body.body_part || req.body.params?.body_part;
 
-  const { event, payload, params } = req.body;
+  try {
+    const slots = await getAvailability(body_part);
+    const formatted = slots.length > 0
+      ? slots.map(s => `${s.provider_name} on ${new Date(s.slot_time).toLocaleString('en-US', {
+          weekday: 'long', month: 'long', day: 'numeric',
+          hour: 'numeric', minute: '2-digit', hour12: true
+        })}, slot ID ${s.id}`).join('. ')
+      : 'No available slots for that specialty.';
 
-  // Direct function call — no event wrapper, just params
-  if (!event && params) {
-    const body_part = params.body_part;
-    const slot_id = params.slot_id;
-
-    if (body_part) {
-      try {
-        const slots = await getAvailability(body_part);
-        const formatted = slots.length > 0
-          ? slots.map(s => `${s.provider_name} on ${new Date(s.slot_time).toLocaleString('en-US', {
-              weekday: 'long', month: 'long', day: 'numeric',
-              hour: 'numeric', minute: '2-digit', hour12: true
-            })}, slot ID ${s.id}`).join('. ')
-          : 'No available slots for that specialty.';
-
-        console.log('Returning availability:', formatted);
-        return res.json({ result: formatted });
-      } catch (err) {
-        console.error('get_availability error:', err);
-        return res.json({ result: 'Unable to fetch availability right now.' });
-      }
-    }
-
-    if (slot_id) {
-      try {
-        const result = await bookAppointment({
-          slotId: params.slot_id,
-          firstName: params.first_name,
-          lastName: params.last_name,
-          dob: params.dob,
-          phone: params.phone,
-          email: params.email,
-          smsOptIn: params.sms_opt_in || false,
-          reason: params.reason
-        });
-
-        return res.json({
-          result: `Appointment confirmed for ${result.patient.first_name} ${result.patient.last_name} with ${result.appointment.provider_name}. A confirmation email has been sent to ${result.patient.email}.`
-        });
-      } catch (err) {
-        console.error('book_appointment error:', err);
-        return res.json({ result: 'Sorry, there was an issue booking the appointment. Please try again.' });
-      }
-    }
+    console.log('Availability result:', formatted);
+    return res.json({ result: formatted });
+  } catch (err) {
+    console.error('get_availability error:', err);
+    return res.json({ result: 'Unable to fetch availability right now.' });
   }
+});
 
-  // Dial lifecycle events
-  res.json({ success: true });
+// POST /api/voice/book-appointment
+router.post('/book-appointment', async (req, res) => {
+  console.log('book_appointment called:', JSON.stringify(req.body, null, 2));
+  const p = req.body.params || req.body;
+
+  try {
+    const result = await bookAppointment({
+      slotId: p.slot_id,
+      firstName: p.first_name,
+      lastName: p.last_name,
+      dob: p.dob,
+      phone: p.phone,
+      email: p.email,
+      smsOptIn: p.sms_opt_in || false,
+      reason: p.reason
+    });
+
+    return res.json({
+      result: `Appointment confirmed for ${result.patient.first_name} ${result.patient.last_name} with ${result.appointment.provider_name}. A confirmation email has been sent to ${result.patient.email}.`
+    });
+  } catch (err) {
+    console.error('book_appointment error:', err);
+    return res.json({ result: 'Sorry, there was an issue booking. Please try again.' });
+  }
 });
 
 module.exports = router;
