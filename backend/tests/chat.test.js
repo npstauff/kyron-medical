@@ -56,7 +56,7 @@ describe('Chat endpoint', () => {
       .post('/api/chat')
       .send({ message: 'hello' });
 
-    expect(res.statusCode).toBe(500);
+    expect(res.statusCode).toBe(400);
   });
 
   it('retains conversation history across messages', async () => {
