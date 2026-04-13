@@ -69,6 +69,10 @@ const tools = [
 router.post('/', async (req, res) => {
     const {sessionId, message} = req.body;
 
+    if(!sessionId || !message) {
+        return res.status(400).json({error: "sessionId and message are required"})
+    }
+
     try {
         let [conv] = await sequelize.query(
         `SELECT * FROM conversations WHERE session_id = $1`,

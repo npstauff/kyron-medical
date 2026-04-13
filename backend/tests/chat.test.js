@@ -51,7 +51,7 @@ describe('Chat endpoint', () => {
     expect(res.body.reply.length).toBeGreaterThan(0);
   }, 15000);
 
-  it('returns 500 on missing sessionId', async () => {
+  it('returns 400 on missing sessionId', async () => {
     const res = await request(app)
       .post('/api/chat')
       .send({ message: 'hello' });
