@@ -389,7 +389,7 @@ export default function AdminPage() {
                 setBookForm((p) => ({ ...p, reason: e.target.value }))
               }
             />
-            //Disable SMS switch since sms requires a buisness page 
+            {/*Disable SMS switch since sms requires a buisness page*/} 
             {/* <FormControlLabel
               control={
                 <Switch

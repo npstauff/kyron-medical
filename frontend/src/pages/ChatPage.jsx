@@ -249,7 +249,6 @@ export default function ChatPage() {
               label="+1"
               placeholder="+1"
               disabled={true}
-              value={callPhone}
               size="small"
             />
             <TextField
