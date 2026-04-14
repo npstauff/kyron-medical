@@ -10,6 +10,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
+//Set up the core endpoints for the apis
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/conversations', require('./routes/conversations'));

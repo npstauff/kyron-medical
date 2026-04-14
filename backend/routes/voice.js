@@ -4,6 +4,7 @@ const sequelize = require('../models');
 const bookAppointment = require('../tools/bookAppointment');
 const getAvailability = require('../tools/getAvailability');
 
+//The prompt attempts to make sure that the AI is constantly updating its information and staying on top of things
 const BASE_PROMPT = `You are a friendly, professional medical scheduling assistant for Kyron Medical. You are on a PHONE CALL. Keep all responses short, natural, and conversational — this is voice, not text. Never use bullet points, lists, or markdown.
 
 CRITICAL RULES:
@@ -39,6 +40,8 @@ OFFICE INFO:
 - Hours: Monday through Friday 8am to 6pm, Saturday 9am to 1pm
 - Phone: 212-555-0100`;
 
+//The format here is just to provide the voice agent with the history of the convo
+//we wont use it in another place
 function formatHistoryForVoice(messages) {
   return messages
     .filter(m => typeof m.content === 'string' || Array.isArray(m.content))
@@ -76,7 +79,9 @@ router.post('/initiate', async (req, res) => {
     const fullPrompt = historyText.length > 0
       ? `${BASE_PROMPT}\n\nPRIOR WEB CHAT CONTEXT:\n${historyText}\n\nYou are continuing this conversation by phone. Greet the patient by name if you know it and pick up naturally from where the chat left off. Do not re-ask for information already provided.`
       : `${BASE_PROMPT}\n\nThis patient is starting fresh by phone. Greet them warmly and ask how you can help.`;
-
+    
+    
+    //update the prompt for the voice agent 
     const promptRes = await fetch(
       `https://api.vogent.ai/api/agents/${process.env.VOGENT_AGENT_ID}/versioned_prompts/${process.env.VOGENT_PROMPT_ID}`,
       {
@@ -100,6 +105,7 @@ router.post('/initiate', async (req, res) => {
       return res.status(500).json({ error: 'Failed to update agent prompt', detail: promptText });
     }
 
+    //begin the call, and make sure to pass the webhookUrl to call our apis
     const dialRes = await fetch('https://api.vogent.ai/api/dials', {
       method: 'POST',
       headers: {

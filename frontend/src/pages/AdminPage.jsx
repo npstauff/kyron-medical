@@ -389,7 +389,8 @@ export default function AdminPage() {
                 setBookForm((p) => ({ ...p, reason: e.target.value }))
               }
             />
-            <FormControlLabel
+            //Disable SMS switch since sms requires a buisness page 
+            {/* <FormControlLabel
               control={
                 <Switch
                   checked={bookForm.sms_opt_in}
@@ -403,7 +404,7 @@ export default function AdminPage() {
                 />
               }
               label="Send SMS confirmation"
-            />
+            /> */}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

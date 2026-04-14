@@ -5,6 +5,8 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
+
+//I ended up not using this in the end, since in order to send sms from twilio, i had to set up a buisiness account
 async function sendAppointmentSms({ patient, appointment }) {
   const appointmentDate = new Date(appointment.slot_time).toLocaleString(
     "en-US",

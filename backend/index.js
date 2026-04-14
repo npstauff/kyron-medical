@@ -5,6 +5,7 @@ app.use('/api/conversations', require('./routes/conversations'));
 
 const PORT = process.env.PORT || 3001;
 
+//Initial server boot up
 sequelize.authenticate()
   .then(() => {
     console.log('DB connected');
